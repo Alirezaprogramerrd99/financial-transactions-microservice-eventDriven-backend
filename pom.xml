@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+
+    <modelVersion>4.0.0</modelVersion>
+
+    <!-- Parent Project Details -->
+    <groupId>org.example</groupId>
+    <artifactId>financial-microservices</artifactId>
+    <version>1.0-SNAPSHOT</version>
+    <packaging>pom</packaging>  <!-- Important for parent projects -->
+
+    <!-- Parent Dependency: Spring Boot Starter Parent -->
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>3.2.5</version>  <!-- Matches your monolith's Spring Boot version -->
+        <relativePath/>
+    </parent>
+
+    <!-- Java & Encoding Configuration -->
+    <properties>
+        <maven.compiler.source>21</maven.compiler.source>
+        <maven.compiler.target>21</maven.compiler.target>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <mapstruct.version>1.5.3.Final</mapstruct.version> <!-- Centralized version for MapStruct -->
+        <springdoc.version>2.3.0</springdoc.version> <!-- Centralized version for SpringDoc -->
+        <java.version>21</java.version>
+    </properties>
+
+    <!-- List of Microservices as Modules -->
+    <modules>
+        <module>customer-service</module>
+        <module>account-service</module>
+<!--        <module>transaction-service</module>-->
+        <module>history-service</module>
+    </modules>
+
+    <!-- Manage Dependencies (Shared Across Microservices) -->
+    <dependencyManagement>
+        <dependencies>
+            <!-- Spring Boot Dependencies -->
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-dependencies</artifactId>
+                <version>3.3.3</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
+    <!-- Manage Plugins for Modules -->
+    <build>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>org.springframework.boot</groupId>
+                    <artifactId>spring-boot-maven-plugin</artifactId>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-compiler-plugin</artifactId>
+                    <version>3.8.1</version>
+                    <configuration>
+                        <source>${maven.compiler.source}</source>
+                        <target>${maven.compiler.target}</target>
+                    </configuration>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+    </build>
+
+</project>

@@ -1,0 +1,151 @@
+version: '3.8'
+
+services:
+
+  # Oracle Database
+  oracle-db:
+    image: gvenzl/oracle-free:latest
+    container_name: oracle-db
+    environment:
+      ORACLE_PASSWORD: oracle
+      ORACLE_DATABASE: FREE
+    ports:
+      - "1521:1521"
+    healthcheck:
+      test: [ "CMD", "bash", "-c", "echo 'SELECT 1 FROM DUAL;' | sqlplus -s system/$$ORACLE_PASSWORD@localhost:1521/FREE" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - microservices-network
+
+  # Kafka + Zookeeper (for Event-Driven Microservices)
+  zookeeper:
+    image: confluentinc/cp-zookeeper:latest
+    container_name: zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+    ports:
+      - "2181:2181"
+    networks:
+      - microservices-network
+
+  kafka:
+    image: confluentinc/cp-kafka:latest
+    container_name: kafka
+    depends_on:
+      - zookeeper
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    ports:
+      - "9092:9092"
+    networks:
+      - microservices-network
+
+  # Parent Microservice Build (Installs Parent POM Before Child Services)
+  parent-build:
+    image: jelastic/maven:3.9.5-openjdk-21
+    container_name: parent-build
+    working_dir: /app
+    volumes:
+      - ~/.m2:/root/.m2  # Cache Maven dependencies
+      - .:/app          # Mount the entire repository (parent POM is in ./financial-microservices)
+    command: mvn install -N -DskipTests
+    networks:
+      - microservices-network
+
+  # Customer Service
+  customer-service:
+    build:
+      context: .   # context is root.
+      dockerfile: ./customer-service/Dockerfile
+    container_name: customer-service
+    volumes:
+      - ./pom.xml:/app/parent-pom.xml  # Updated to use the root pom.xml
+    ports:
+      - "8081:8081"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:oracle:thin:@oracle-db:1521/FREE
+      SPRING_DATASOURCE_USERNAME: system
+      SPRING_DATASOURCE_PASSWORD: oracle
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
+
+    depends_on:
+      parent-build:
+        condition: service_completed_successfully
+      oracle-db:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+    networks:
+      - microservices-network
+
+  # Account Service
+  account-service:
+    build:
+      context: .
+      dockerfile: ./account-service/Dockerfile
+    container_name: account-service
+    volumes:
+      - ./pom.xml:/app/parent-pom.xml  # Updated to use the root pom.xml
+    ports:
+      - "8082:8082"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:oracle:thin:@oracle-db:1521/FREE
+      SPRING_DATASOURCE_USERNAME: system
+      SPRING_DATASOURCE_PASSWORD: oracle
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
+
+    depends_on:
+      parent-build:
+        condition: service_completed_successfully
+      oracle-db:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+    networks:
+      - microservices-network
+
+  # History Service
+  history-service:
+    build:
+      context: .
+      dockerfile: ./history-service/Dockerfile
+    container_name: history-service
+    volumes:
+      - ./pom.xml:/app/parent-pom.xml  # Updated to use the root pom.xml
+    ports:
+      - "8083:8083"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:oracle:thin:@oracle-db:1521/FREE
+      SPRING_DATASOURCE_USERNAME: system
+      SPRING_DATASOURCE_PASSWORD: oracle
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
+    depends_on:
+      parent-build:
+        condition: service_completed_successfully
+      oracle-db:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+    networks:
+      - microservices-network
+
+networks:
+  microservices-network:
+    driver: bridge
