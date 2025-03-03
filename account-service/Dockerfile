@@ -5,15 +5,19 @@ FROM maven:3.9.6-eclipse-temurin-21 AS build
 
 WORKDIR /app
 
-# Copy the parent POM from the root (it’s available because the build context is ".")
-COPY pom.xml /app/parent-pom.xml
+## Copy the parent POM from the root (it’s available because the build context is ".")
+#COPY pom.xml /app/parent-pom.xml
+#
+## Copy the child module's pom.xml and src folder
+#COPY account-service/pom.xml .
+#COPY account-service/src ./src
 
-# Copy the child module's pom.xml and src folder
-COPY account-service/pom.xml .
-COPY account-service/src ./src
+COPY ./pom.xml /app/parent-pom.xml
+COPY ./account-service/pom.xml /app/pom.xml
+COPY ./account-service/src /app/src
 
 # Install the parent POM before building the module
-RUN mvn -f /app/parent-pom.xml install -N -DskipTests
+#RUN mvn -f /app/parent-pom.xml install -N -DskipTests
 
 RUN mvn clean package -DskipTests
 

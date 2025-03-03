@@ -48,13 +48,13 @@ services:
 
   # Parent Microservice Build (Installs Parent POM Before Child Services)
   parent-build:
-    image: jelastic/maven:3.9.5-openjdk-21
+    image: maven:3.9.6-eclipse-temurin-21
     container_name: parent-build
     working_dir: /app
     volumes:
       - ~/.m2:/root/.m2  # Cache Maven dependencies
       - .:/app          # Mount the entire repository (parent POM is in ./financial-microservices)
-    command: mvn install -N -DskipTests
+    command: mvn clean install -N -DskipTests
     networks:
       - microservices-network
 

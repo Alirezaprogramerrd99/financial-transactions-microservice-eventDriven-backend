@@ -10,6 +10,8 @@
 		<artifactId>financial-microservices</artifactId>
 		<version>1.0-SNAPSHOT</version>
 <!--		<relativePath>../financial-microservices/pom.xml</relativePath>  &lt;!&ndash; Ensure correct path &ndash;&gt;-->
+		<relativePath>parent-pom.xml</relativePath>  <!-- for dockerized app -->
+
 	</parent>
 
 	<artifactId>account-service</artifactId>
